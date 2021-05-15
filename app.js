@@ -1,29 +1,25 @@
 const express = require('express');
+const ExpressError = require('./ExpressError');
 
 const app = express();
 
-app.get('/mean', (request, response) => {
-	handleResponse(request, response, 'mean');
+app.get('/mean', (request, response, next) => {
+	handleResponse(request, response, 'mean', next);
 });
 
-app.get('/median', (request, response) => {
-	handleResponse(request, response, 'median');
+app.get('/median', (request, response, next) => {
+	handleResponse(request, response, 'median', next);
 });
 
-app.get('/mode', (request, response) => {
-	handleResponse(request, response, 'mode');
+app.get('/mode', (request, response, next) => {
+	handleResponse(request, response, 'mode', next);
 });
 
-app.get('/all', (request, response) => {
-	handleResponse(request, response, 'all');
+app.get('/all', (request, response, next) => {
+	handleResponse(request, response, 'all', next);
 });
 
-app.listen('3000', () => {
-	console.log('App is now running on port 3000, hopefully');
-});
-
-function validateNumber(nums = undefined) {
-	console.log(nums);
+function validateNumbers(nums = undefined) {
 	if (nums === undefined) return { valid: false, error: 'You must provide a number' };
 	if (nums.some(val => isNaN(val))) return { valid: false, error: `${nums} is not a number` };
 
@@ -59,7 +55,6 @@ function getMode(nums) {
 		occurrences[val] = occurrences[val] === undefined ? 1 : occurrences[val] + 1;
 	}
 	let mode = 'There is no mode for this set of numbers';
-	console.log(occurrences);
 	for (const [key, val] of Object.entries(occurrences)) {
 		if (val > 1) mode = key;
 	}
@@ -75,10 +70,11 @@ function convertInputToInt(nums) {
 	return nums;
 }
 
-function handleResponse(request, response, routeType) {
+function handleResponse(request, response, routeType, next) {
 	let nums = convertInputToInt(request.query.nums);
-	const validityCheck = validateNumber(nums);
-	if (validityCheck['valid']) {
+	const validityCheck = validateNumbers(nums);
+	try {
+		if (validityCheck['valid'] === false) throw new ExpressError(validityCheck['error'], 404);
 		if (routeType === 'all') {
 			const mean = getMean(nums).toString();
 			const median = getMedian(nums).toString();
@@ -102,7 +98,14 @@ function handleResponse(request, response, routeType) {
 			const mode = getMode(nums);
 			response.send(mode.toString());
 		}
-	} else {
-		response.status(404).send(validityCheck['error']);
+	} catch (err) {
+		return next(err);
 	}
 }
+
+//error handler
+app.use((err, req, res, next) => {
+	res.status(err.status).send(err.message);
+});
+
+module.exports = { getMean, getMode, getMedian, validateNumbers, app };
