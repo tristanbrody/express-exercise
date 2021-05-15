@@ -14,6 +14,10 @@ app.get('/mode', (request, response) => {
 	handleResponse(request, response, 'mode');
 });
 
+app.get('/all', (request, response) => {
+	handleResponse(request, response, 'all');
+});
+
 app.listen('3000', () => {
 	console.log('App is now running on port 3000, hopefully');
 });
@@ -30,7 +34,7 @@ function getMean(nums) {
 	const sum = nums.reduce((value, total) => {
 		return total + value;
 	});
-	return sum / nums.length;
+	return Math.round(sum / nums.length);
 }
 
 function getMedian(nums) {
@@ -49,7 +53,6 @@ function getMode(nums) {
 	nums.sort(function (a, b) {
 		return a - b;
 	});
-	console.log(nums);
 	const occurrences = {};
 	for (let i = 0; i < nums.length; i++) {
 		let val = nums[i];
@@ -76,6 +79,17 @@ function handleResponse(request, response, routeType) {
 	let nums = convertInputToInt(request.query.nums);
 	const validityCheck = validateNumber(nums);
 	if (validityCheck['valid']) {
+		if (routeType === 'all') {
+			const mean = getMean(nums).toString();
+			const median = getMedian(nums).toString();
+			const mode = getMode(nums).toString();
+			response.send({
+				operation: 'all',
+				mean,
+				median,
+				mode
+			});
+		}
 		if (routeType === 'mean') {
 			const mean = getMean(nums);
 			response.send(mean.toString());
