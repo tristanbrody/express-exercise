@@ -89,8 +89,6 @@ function handleResponse(request, response, routeType) {
 			response.send(mode.toString());
 		}
 	} else {
-		// response.sendStatus(400)
-		//TODO ask why the above doesn't work
-		response.send(validityCheck['error']);
+		response.status(404).send(validityCheck['error']);
 	}
 }
